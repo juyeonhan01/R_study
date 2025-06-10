@@ -1,15 +1,20 @@
+#install.packages("dplyr")
 library(dplyr)  # 로드
 # 한국어 파일의 경우, CP949 또는 EUC-KR 인코딩을 사용하는 것이 일반적
-data = read.csv('국민건강보험공단_건강검진정보.csv',
-                na.strings = c(""), # ""를 NA로 표현한다.
-                fileEncoding = 'CP949', 
-                encoding = 'UTF-8', 
-                check.names = FALSE)
+# data = read.csv('국민건강보험공단_건강검진정보.csv',
+#                 na.strings = c(""), # ""를 NA로 표현한다.
+#                 fileEncoding = 'CP949', 
+#                 encoding = 'UTF-8', 
+#                 check.names = FALSE)
 #View(data)
 str(data)
 
-
-
+getwd()
+setwd("C:/Users/admin/Desktop")
+data <- read.csv("국민건강보험공단_건강검진정보.csv",
+                 na.strings = c(""),
+                 fileEncoding = "CP949",
+                 check.names = FALSE)
 # 문제 1. : 남성의 허리둘레 사분위수 조회.
 남성 = data %>% filter(성별 == 1)
 print(quantile(남성$허리둘레))
@@ -101,25 +106,93 @@ boxplot(`연령대코드(5세단위)`~허리둘레,
 #산점도
 plot(문제8$`신장(5cm단위)`, 문제8$`체중(5kg단위)`,
      main='신장과 체중의 관계',
-     xlab='신장',
-     ylab='체중',
-     col=c('grey', 'pink', 'skyblue'))
+     xlab='신장 (5cm 단위)',
+     ylab='체중 (5kg 단위)',
+     col='skyblue',
+     pch=16)
 
 
 # 회귀선 추가
-model = lm(`신장(5cm단위)` ~ `체중(5kg단위)`, data = 문제8)
+model = lm(`체중(5kg단위)` ~ `신장(5cm단위)`, data = 문제8)
 abline(model, col = 'red', lwd = 2)
 
 
 
 
 
+
 # 문제 9. : 감마지티피의 분포를 정규분포그래프으로 나타내세요. 중앙값, 하위 20%, 상위 20%, 신뢰구간도 표현해주세요.
+
+str(data)
+
+#정규분포그래프
+mu=mean(data$감마지티피)
+sigma=sd(data$감마지티피)
+print(mu)
+print(sigma)
+
+x = seq(min(data$감마지티피)-10, max(data$감마지티피)+10, length = 50)
+y = dnorm(x, mean = mu, sd = sigma)
+
+plot(x, y, type='l', col = 'blue', lwd =2,
+     main = '감마지티피의 정규분포',
+     xlab='감마지티피',
+     ylab='밀도')
+
+
+#중앙값, 하위 20%, 상위 20%, 신뢰구간
+
+#중앙값, 상위20%, 하위20% 선 추가
+#median: 중앙값
+med=median(data$감마지티피)
+print(quantile(data$감마지티피))#사분위수 출력
+
+q20 = quantile(data$감마지티피, 0.2)#하위 20%
+q80 = quantile(data$감마지티피, 0.8)#상위 20%
+
+
+#add line으로 추가하기
+#v= 는 수직선(vertical line)
+#lwd 선두께, lty 점선
+abline(v=med,col='purple',lwd=2, lty=2)
+abline(v=q20, col='orange',lwd=2, lty=2)
+abline(v=q80, col='red',lwd=2, lty=2)
+
+
+
+
+str(data)
 # 문제 10. : 혈청지오티와 혈청지피티의 관계를 산점도로 나타내시오. 단, 혈청지오티와 혈청지피티를 min-max로 스케일링 후 비교하시오. 회귀선도 추가하시오.
 
+data = data %>%
+  rename(
+    ast = `혈청지오티(AST)`,
+    alt = `혈청지피티(ALT)`
+  )
+
+# Min-Max 
+data_scaled = data %>%
+  mutate(
+    scaled_ast = (ast - min(ast, na.rm=TRUE)) / (max(ast, na.rm=TRUE) - min(ast, na.rm=TRUE)),
+    scaled_alt = (alt - min(alt, na.rm=TRUE)) / (max(alt, na.rm=TRUE) - min(alt, na.rm=TRUE))
+  )
 
 
 
+# 산점도 그리기
+plot(
+  data_scaled$scaled_ast,
+  data_scaled$scaled_alt,
+  main = '혈청지오티(AST)와 혈청지피티(ALT)의 관계',
+  xlab = 'AST',
+  ylab = 'ALT',
+  col = 'blue',
+  pch = 19
+)
+
+# 2. 회귀선 추가
+model = lm(scaled_alt ~ scaled_ast, data = data_scaled)
+abline(model, col = 'red', lwd = 2)
 
 
 
